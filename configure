@@ -4,3 +4,16 @@ if [ ! -d "webkb" ]; then
   tar -xvf webkb.gtar
   rm webkb.gtar
 fi
+
+if [ ! -d "env" ]; then
+  wget -O virtualenv.tar.gz https://pypi.python.org/packages/source/v/virtualenv/virtualenv-12.0.7.tar.gz#md5=e08796f79d112f3bfa6653cc10840114
+  gunzip virtualenv.tar.gz
+  tar -xvf virtualenv.tar
+  mv virtualenv-12.0.7 virtualenv
+  python virtualenv/setup.py build
+  mkdir env
+  python virtualenv/virtualenv.py env
+  rm -rf virtualenv*
+fi
+
+bash -c 'source env/bin/activate; bash'
