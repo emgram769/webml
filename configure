@@ -1,0 +1,6 @@
+if [ ! -d "webkb" ]; then
+  wget -O webkb.gtar.gz http://www.cs.cmu.edu/afs/cs.cmu.edu/project/theo-20/www/data/webkb-data.gtar.gz
+  gunzip webkb.gtar.gz
+  tar -xvf webkb.gtar
+  rm webkb.gtar
+fi
