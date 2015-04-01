@@ -2,8 +2,7 @@ from html.parser import HTMLParser
 import csv
 from os import walk
 from os.path import join
-c = "webkb/course/cornell/http:^^www.tc.cornell.edu^Visualization^Education^cs718^"
-c2 = "webkb/course/cornell/http\:\^\^www.cs.cornell.edu\^Info\^Courses\^Current\^CS211\^home.html"
+import sys
 
 # create a subclass and override the handler methods
 class HTMLProcessor(HTMLParser):
@@ -11,7 +10,7 @@ class HTMLProcessor(HTMLParser):
     self.html_dict = {}
     self.word_dict = {}
     self.doc = 0
-    self.docs = [{'type':type}]
+    self.docs = [{'<type>':type}]
     self.type = type
     super().__init__()
 
@@ -34,7 +33,7 @@ class HTMLProcessor(HTMLParser):
         word_dict[x] = 1
   
   def new_doc(self):
-    self.docs += [{'type':self.type}]
+    self.docs += [{'<type>':self.type}]
     if self.doc > 0:
       d = self.docs[self.doc]
       for key in d:
@@ -66,10 +65,15 @@ def to_csv(data):
     out.writeheader()
     out.writerows(data)
 
-p = HTMLProcessor('class')
+if len(sys.argv) < 3:
+  print("Usage python gen.py directory class_label")
+  exit()
+
+p = HTMLProcessor(sys.argv[2])
+#"webkb/course/cornell"
 
 def digest(processor, c):
-  with open(join("webkb/course/cornell", c)) as f:
+  with open(join(sys.argv[1], c)) as f:
     try:
       data = f.read()
     except:
@@ -80,7 +84,7 @@ def digest(processor, c):
     p.new_doc()
     
 
-for (dirpath, dirnames, filenames) in walk("webkb/course/cornell"):
+for (dirpath, dirnames, filenames) in walk(sys.argv[1]):
   for c in filenames:
     digest(p, c)
 
