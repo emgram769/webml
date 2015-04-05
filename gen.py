@@ -44,6 +44,8 @@ class HTMLProcessor(HTMLParser):
             for pd in self.docs[0:self.doc-1]:
               if key not in pd:
                 pd[key] = 0
+              else:
+                break
         d = self.docs[self.doc-1]
         for key in d:
           if key not in self.docs[self.doc]:
@@ -57,6 +59,8 @@ class HTMLProcessor(HTMLParser):
           for pd in self.docs[0:self.doc-2]:
             if key not in pd:
               pd[key] = 0
+            else:
+              break
         self.docs[self.doc][key] = 0
     self.doc += 1
 
@@ -66,9 +70,9 @@ class HTMLProcessor(HTMLParser):
 def getHeaders(data):
   i = data.index('<')
   head = data[0:i].strip()
-  l =  filter(lambda x: x != '', head.split('\n'))
+  l = filter(lambda x: x != '', head.split('\n'))
   t = [i.split(':') for i in l]
-  d = dict((i[0], i[1].strip()) for i in t)
+  d = dict((i[0].strip(), i[1].strip()) for i in t if len(i) > 1)
   return d
 
 def getHTML(data):
