@@ -3,15 +3,17 @@ import csv
 from os import walk
 from os.path import join
 import sys
+import re
+
+alphanumeric = re.compile('[\W_]+')
 
 # create a subclass and override the handler methods
 class HTMLProcessor(HTMLParser):
-  def __init__(self, type):
+  def __init__(self):
     self.html_dict = {}
     self.word_dict = {}
-    self.doc = 0
-    self.docs = [{'<type>':type}]
-    self.type = type
+    self.doc = -1
+    self.docs = []
     super().__init__()
 
   def handle_starttag(self, tag, attrs):
@@ -26,21 +28,36 @@ class HTMLProcessor(HTMLParser):
   def handle_data(self, data):
     word_dict = self.docs[self.doc]
     word_data = data.split()
-    for x in word_data:
+    for word in word_data:
+      x = alphanumeric.sub('', word).lower()
       if x in word_dict:
         word_dict[x] += 1
       else:
         word_dict[x] = 1
   
-  def new_doc(self):
-    self.docs += [{'<type>':self.type}]
+  def new_doc(self, type):
+    if type == -1:
+      if self.doc > 0:
+        d2 = self.docs[self.doc]
+        for key in d2:
+          if self.doc > 1:
+            for pd in self.docs[0:self.doc-1]:
+              if key not in pd:
+                pd[key] = 0
+        d = self.docs[self.doc-1]
+        for key in d:
+          if key not in self.docs[self.doc]:
+            self.docs[self.doc][key] = 0
+        return
+    self.docs += [{'<type>':type}]
     if self.doc > 0:
-      d = self.docs[self.doc]
+      d = self.docs[self.doc-1]
       for key in d:
-        for pd in self.docs[0:self.doc-1]:
-          if key not in pd:
-            pd[key] = 0
-        self.docs[self.doc+1][key] = 0
+        if self.doc > 1:
+          for pd in self.docs[0:self.doc-2]:
+            if key not in pd:
+              pd[key] = 0
+        self.docs[self.doc][key] = 0
     self.doc += 1
 
   def get_data_list(self):
@@ -48,7 +65,7 @@ class HTMLProcessor(HTMLParser):
 
 def getHeaders(data):
   i = data.index('<')
-  head = data[0:i]
+  head = data[0:i].strip()
   l =  filter(lambda x: x != '', head.split('\n'))
   t = [i.split(':') for i in l]
   d = dict((i[0], i[1].strip()) for i in t)
@@ -65,27 +82,32 @@ def to_csv(data):
     out.writeheader()
     out.writerows(data)
 
-if len(sys.argv) < 3:
-  print("Usage python gen.py directory class_label")
+if len(sys.argv) < 2:
+  print("Usage python gen.py directory")
   exit()
 
-p = HTMLProcessor(sys.argv[2])
-#"webkb/course/cornell"
+p = HTMLProcessor()
 
-def digest(processor, c):
-  with open(join(sys.argv[1], c)) as f:
+def digest(processor, c, type):
+  with open(c) as f:
     try:
       data = f.read()
     except:
       return
     headers = getHeaders(data)
     html = getHTML(data)
+    p.new_doc(type)
     p.feed(html)
-    p.new_doc()
     
 
-for (dirpath, dirnames, filenames) in walk(sys.argv[1]):
-  for c in filenames:
-    digest(p, c)
+for (dirpath, dirnames, files) in walk(sys.argv[1]):
+  type = 0
+  for d in dirnames:
+    print(d, type)
+    for (dirp, dirn, filenames) in walk(join(dirpath,d)):
+      for c in filenames:
+        digest(p, join(dirp, c), type)
+    type += 1
+  p.new_doc(-1)
 
 to_csv(p.docs)
