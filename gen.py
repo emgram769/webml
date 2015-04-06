@@ -36,6 +36,7 @@ class HTMLProcessor(HTMLParser):
         word_dict[x] = 1
   
   def new_doc(self, type):
+    print("doc with type " + type)
     if type == -1:
       if self.doc > 0:
         d2 = self.docs[self.doc]
@@ -51,7 +52,7 @@ class HTMLProcessor(HTMLParser):
           if key not in self.docs[self.doc]:
             self.docs[self.doc][key] = 0
         return
-    self.docs += [{'<type>':type}]
+    self.docs += [{}]
     if self.doc > 0:
       d = self.docs[self.doc-1]
       for key in d:
@@ -62,6 +63,7 @@ class HTMLProcessor(HTMLParser):
             else:
               break
         self.docs[self.doc][key] = 0
+    self.docs[self.doc]['<type>'] = type
     self.doc += 1
 
   def get_data_list(self):
