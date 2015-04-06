@@ -36,7 +36,6 @@ class HTMLProcessor(HTMLParser):
         word_dict[x] = 1
   
   def new_doc(self, type):
-    print("doc with type " + type)
     if type == -1:
       if self.doc > 0:
         d2 = self.docs[self.doc]
