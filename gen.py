@@ -83,7 +83,7 @@ def getHTML(data):
 def to_csv(data):
   keys = data[0].keys()
   with open('output.csv', 'w') as f:
-    out = csv.DictWriter(f,fieldnames=keys)
+    out = csv.DictWriter(f,fieldnames=keys,restval='0')
     out.writeheader()
     out.writerows(data)
 
