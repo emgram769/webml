@@ -11,19 +11,24 @@ alphanumeric = re.compile('[\W_]+')
 class HTMLProcessor(HTMLParser):
   def __init__(self):
     self.html_dict = {}
+    self.html_stack = []
     self.word_dict = {}
     self.doc = -1
     self.docs = []
     super().__init__()
 
   def handle_starttag(self, tag, attrs):
-    if tag in self.html_dict:
-      self.html_dict[tag] += 1
+    word_dict = self.docs[self.doc]
+    self.html_stack.append(tag)
+    html_word = ','.join(self.html_stack[-3:])
+    if html_word in word_dict:
+      word_dict[html_word] += 1
     else:
-      self.html_dict[tag] = 1
+      word_dict[html_word] = 1
 
   def handle_endtag(self, tag):
-    pass
+    if self.html_stack[-1] == tag:
+      self.html_stack.pop()
 
   def handle_data(self, data):
     word_dict = self.docs[self.doc]
