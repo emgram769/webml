@@ -4,15 +4,15 @@ from os import walk
 from os.path import join
 import sys
 import re
+import collections
 
 alphanumeric = re.compile('[\W_]+')
 
 # create a subclass and override the handler methods
 class HTMLProcessor(HTMLParser):
   def __init__(self):
-    self.html_dict = {}
     self.html_stack = []
-    self.word_dict = {}
+    self.word_dict = collections.OrderedDict() #{}
     self.doc = -1
     self.docs = []
     super().__init__()
@@ -56,7 +56,7 @@ class HTMLProcessor(HTMLParser):
           if key not in self.docs[self.doc]:
             self.docs[self.doc][key] = 0
         return
-    self.docs += [{}]
+    self.docs += [collections.OrderedDict()]
     if self.doc > 0:
       d = self.docs[self.doc-1]
       for key in d:
