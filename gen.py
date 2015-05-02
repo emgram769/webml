@@ -8,14 +8,45 @@ import collections
 
 alphanumeric = re.compile('[\W_]+')
 
-# create a subclass and override the handler methods
-class HTMLProcessor(HTMLParser):
+class DataProcessor(object):
   def __init__(self):
     self.html_stack = []
     self.word_dict = collections.OrderedDict() #{}
     self.doc = -1
     self.docs = []
-    super().__init__()
+
+  def new_doc(self, type):
+    if type == -1:
+      if self.doc > 0:
+        d2 = self.docs[self.doc]
+        for key in d2:
+          if self.doc > 1:
+            for pd in self.docs[0:self.doc-1]:
+              if key not in pd:
+                pd[key] = 0
+              else:
+                break
+        d = self.docs[self.doc-1]
+        for key in d:
+          if key not in self.docs[self.doc]:
+            self.docs[self.doc][key] = 0
+        return
+    self.docs += [collections.OrderedDict()]
+    self.docs[self.doc]['<type>'] = type
+    self.doc += 1
+    if self.doc > 0:
+      d = self.docs[self.doc-1]
+      for key in d:
+        if self.doc > 1:
+          for pd in self.docs[0:self.doc-2]:
+            if key not in pd:
+              pd[key] = 0
+            else:
+              break
+        self.docs[self.doc][key] = 0
+
+  def get_data_list(self):
+    return self.word_data
 
   def handle_starttag(self, tag, attrs):
     word_dict = self.docs[self.doc]
@@ -39,39 +70,21 @@ class HTMLProcessor(HTMLParser):
         word_dict[x] += 1
       else:
         word_dict[x] = 1
-  
-  def new_doc(self, type):
-    if type == -1:
-      if self.doc > 0:
-        d2 = self.docs[self.doc]
-        for key in d2:
-          if self.doc > 1:
-            for pd in self.docs[0:self.doc-1]:
-              if key not in pd:
-                pd[key] = 0
-              else:
-                break
-        d = self.docs[self.doc-1]
-        for key in d:
-          if key not in self.docs[self.doc]:
-            self.docs[self.doc][key] = 0
-        return
-    self.docs += [collections.OrderedDict()]
-    if self.doc > 0:
-      d = self.docs[self.doc-1]
-      for key in d:
-        if self.doc > 1:
-          for pd in self.docs[0:self.doc-2]:
-            if key not in pd:
-              pd[key] = 0
-            else:
-              break
-        self.docs[self.doc][key] = 0
-    self.docs[self.doc]['<type>'] = type
-    self.doc += 1
 
-  def get_data_list(self):
-    return self.word_data
+# create a subclass and override the handler methods
+class HTMLProcessor(HTMLParser):
+  def __init__(self, datap):
+    self.datap = datap
+    super().__init__()
+
+  def handle_starttag(self, tag, attrs):
+    self.datap.handle_starttag(tag,attrs)
+
+  def handle_endtag(self, tag):
+    self.datap.handle_endtag(tag)
+
+  def handle_data(self, data):
+    self.datap.handle_data(data)
 
 def getHeaders(data):
   i = data.index('<')
@@ -96,17 +109,19 @@ if len(sys.argv) < 2:
   print("Usage python gen.py directory")
   exit()
 
-p = HTMLProcessor()
+dp = DataProcessor()
 
-def digest(processor, c, type):
+def digest(c, type):
   with open(c) as f:
     try:
       data = f.read()
     except:
       return
+    p = HTMLProcessor(dp)
+    latestp = p
     headers = getHeaders(data)
     html = getHTML(data)
-    p.new_doc(type)
+    dp.new_doc(type)
     p.feed(html)
     
 
@@ -116,8 +131,11 @@ for (dirpath, dirnames, files) in walk(sys.argv[1]):
     print(d, type)
     for (dirp, dirn, filenames) in walk(join(dirpath,d)):
       for c in filenames:
-        digest(p, join(dirp, c), type)
+        try:
+          digest(join(dirp, c), type)
+        except Exception as e:
+          print("Unable to open %s" % (str(e)))
     type += 1
-  p.new_doc(-1)
+  dp.new_doc(-1)
 
-to_csv(p.docs)
+to_csv(dp.docs)
